@@ -540,3 +540,4 @@ function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
 
 }
+
