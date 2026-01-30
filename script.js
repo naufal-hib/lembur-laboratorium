@@ -3,7 +3,8 @@
 // ============================================
 
 // API URL (GANTI DENGAN WEB APP URL ANDA)
-const API_URL = 'https://script.google.com/macros/s/AKfycbyMLBWssAlpG-dC-WfsJRT043smCRPq5Q6VAu9oh17U4v9D7O_1hckEmYTWNF5L42IcEA/exec';
+// const API_URL = 'https://script.google.com/macros/s/AKfycbyMLBWssAlpG-dC-WfsJRT043smCRPq5Q6VAu9oh17U4v9D7O_1hckEmYTWNF5L42IcEA/exec';
+const API_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbxkkqeQ4rM9-YrBYkqte5PZ5IHEQD2ZKixt40zphx_3hNIBQND4JySWkqXlvfH3hrSghg/exec');
 
 // Global Variables
 let currentUser = null;
@@ -540,6 +541,7 @@ function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
 
 }
+
 
 
 
