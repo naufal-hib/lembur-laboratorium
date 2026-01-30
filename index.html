@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEMBUR LABORATORIUM</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Memuat...</p>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>📊 LEMBUR LABORATORIUM</h1>
+                <p>Sistem Rekap Lembur Karyawan</p>
+            </div>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="nik">NIK</label>
+                    <input type="text" id="nik" placeholder="Masukkan NIK Anda" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Masukkan Password" autocomplete="off">
+                    <small class="default-password">🔐 Default Password: 123</small>
+                </div>
+                <button id="btnLogin" class="btn-login">LOGIN</button>
+                <div id="loginMessage" class="login-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Admin -->
+    <div id="adminDashboard" class="dashboard" style="display:none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>👨‍💼 ADMIN</h2>
+                <p id="adminName">Admin HR</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" onclick="showPage('admin-summary')">
+                    <span>📊</span> Dashboard
+                </li>
+                <li onclick="showPage('admin-cutoff')">
+                    <span>📅</span> Cutoff
+                </li>
+                <li onclick="showPage('admin-import')">
+                    <span>📁</span> Import Data
+                </li>
+                <li onclick="showPage('admin-rekap')">
+                    <span>📋</span> Rekap Karyawan
+                </li>
+                <li onclick="showPage('admin-kalender')">
+                    <span>📆</span> Kalender Lembur
+                </li>
+                <li onclick="showPage('admin-user')">
+                    <span>👥</span> Manajemen User
+                </li>
+                <li onclick="showPage('admin-whatsapp')">
+                    <span>📱</span> WhatsApp Notif
+                </li>
+                <li onclick="logout()" style="margin-top: 20px;">
+                    <span>🚪</span> Logout
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1 id="pageTitle">Dashboard Admin</h1>
+                <div class="user-info">
+                    <span id="currentTime"></span>
+                    <span id="cutoffPeriod">Periode: -</span>
+                </div>
+            </div>
+
+            <!-- Summary Page -->
+            <div id="admin-summary" class="page-content active">
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-icon">👥</div>
+                        <div class="card-content">
+                            <h3>Total Karyawan</h3>
+                            <p id="totalKaryawan">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-content">
+                            <h3>Total Jam Lembur</h3>
+                            <p id="totalJam">0 jam</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">💰</div>
+                        <div class="card-content">
+                            <h3>Total Insentif</h3>
+                            <p id="totalInsentif">Rp 0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⚠️</div>
+                        <div class="card-content">
+                            <h3>Perlu Dicek</h3>
+                            <p id="perluDicek">0 data</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h2>Aktivitas Terbaru</h2>
+                    <div id="activityList">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cutoff Page -->
+            <div id="admin-cutoff" class="page-content">
+                <h2>Pengaturan Cutoff</h2>
+                <div class="cutoff-form">
+                    <div class="form-group">
+                        <label>Bulan Gaji</label>
+                        <select id="bulanGaji">
+                            <option value="Januari 2026">Januari 2026</option>
+                            <option value="Februari 2026">Februari 2026</option>
+                            <option value="Maret 2026">Maret 2026</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cutoff Awal</label>
+                        <input type="date" id="cutoffAwal">
+                    </div>
+                    <div class="form-group">
+                        <label>Cutoff Akhir</label>
+                        <input type="date" id="cutoffAkhir">
+                    </div>
+                    <button class="btn-primary" onclick="saveCutoff()">Simpan Cutoff</button>
+                </div>
+            </div>
+
+            <!-- Import Page -->
+            <div id="admin-import" class="page-content">
+                <h2>Import Data Excel</h2>
+                <div class="import-section">
+                    <div class="import-instructions">
+                        <h3>📋 Instruksi Import:</h3>
+                        <ol>
+                            <li>Copy data dari Excel sesuai format</li>
+                            <li>Paste ke area di bawah ini</li>
+                            <li>Klik "Preview" untuk melihat data</li>
+                            <li>Klik "Import" untuk menyimpan</li>
+                        </ol>
+                        <p class="note">⚠️ Sistem akan otomatis mendeteksi duplikat dan mengupdate data yang sudah ada</p>
+                    </div>
+                    <div class="import-area">
+                        <textarea id="importData" placeholder="Paste data Excel di sini (format: Tanggal&#10;NIK&#10;Nama&#10;Departemen&#10;Jabatan&#10;Jenis Lembur&#10;Jam Lembur&#10;Insentif Kopi&#10;Keterangan&#10;Pengecekan)" rows="10"></textarea>
+                        <div class="import-buttons">
+                            <button class="btn-secondary" onclick="previewImport()">Preview</button>
+                            <button class="btn-primary" onclick="processImport()">Import</button>
+                        </div>
+                        <div id="importResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rekap Karyawan Page -->
+            <div id="admin-rekap" class="page-content">
+                <h2>Rekap Lembur Per Karyawan</h2>
+                <div class="table-container">
+                    <table id="rekapTable">
+                        <thead>
+                            <tr>
+                                <th>NIK</th>
+                                <th>Nama</th>
+                                <th>Total Jam</th>
+                                <th>Total Insentif</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Kalender Page -->
+            <div id="admin-kalender" class="page-content">
+                <h2>Kalender Lembur Semua Karyawan</h2>
+                <div class="kalender-controls">
+                    <select id="kalenderBulan">
+                        <option value="0">Januari</option>
+                        <option value="1">Februari</option>
+                        <option value="2">Maret</option>
+                        <option value="3">April</option>
+                        <option value="4">Mei</option>
+                        <option value="5">Juni</option>
+                        <option value="6">Juli</option>
+                        <option value="7">Agustus</option>
+                        <option value="8">September</option>
+                        <option value="9">Oktober</option>
+                        <option value="10">November</option>
+                        <option value="11">Desember</option>
+                    </select>
+                    <select id="kalenderTahun">
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadKalender()">Tampilkan</button>
+                </div>
+                <div id="kalenderContainer"></div>
+            </div>
+
+            <!-- User Management Page -->
+            <div id="admin-user" class="page-content">
+                <h2>Manajemen User</h2>
+                <div class="user-controls">
+                    <button class="btn-primary" onclick="showAddUserModal()">Tambah User</button>
+                </div>
+                <div class="table-container">
+                    <table id="userTable">
+                        <thead>
+                            <tr>
+                                <th>NIK</th>
+                                <th>Nama</th>
+                                <th>Role</th>
+                                <th>No HP</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WhatsApp Page -->
+            <div id="admin-whatsapp" class="page-content">
+                <h2>Notifikasi WhatsApp</h2>
+                <div class="whatsapp-section">
+                    <h3>Kirim ke Semua Karyawan</h3>
+                    <textarea id="whatsappMessageAll" placeholder="Tulis pesan untuk semua karyawan..." rows="4"></textarea>
+                    <button class="btn-primary" onclick="sendWhatsAppAll()">Kirim ke Semua</button>
+                </div>
+                <div class="whatsapp-section">
+                    <h3>Kirim ke Per Karyawan</h3>
+                    <select id="whatsappTarget">
+                        <option value="">Pilih Karyawan</option>
+                    </select>
+                    <textarea id="whatsappMessage" placeholder="Tulis pesan..." rows="4"></textarea>
+                    <button class="btn-primary" onclick="sendWhatsApp()">Kirim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Karyawan -->
+    <div id="karyawanDashboard" class="dashboard" style="display:none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>👤 KARYAWAN</h2>
+                <p id="karyawanName">Nama Karyawan</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" onclick="showKaryawanPage('karyawan-rekap')">
+                    <span>📊</span> Rekap Lembur
+                </li>
+                <li onclick="showKaryawanPage('karyawan-detail')">
+                    <span>📋</span> Detail Lembur
+                </li>
+                <li onclick="showKaryawanPage('karyawan-kalender')">
+                    <span>📆</span> Kalender
+                </li>
+                <li onclick="showKaryawanPage('karyawan-password')">
+                    <span>⚙️</span> Ganti Password
+                </li>
+                <li onclick="logout()" style="margin-top: 20px;">
+                    <span>🚪</span> Logout
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1 id="karyawanPageTitle">Rekap Lembur</h1>
+                <div class="user-info">
+                    <span id="karyawanCurrentTime"></span>
+                    <span id="karyawanCutoffPeriod">Periode: -</span>
+                </div>
+            </div>
+
+            <!-- Rekap Page -->
+            <div id="karyawan-rekap" class="page-content active">
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-icon">👤</div>
+                        <div class="card-content">
+                            <h3>Nama</h3>
+                            <p id="karyawanNama">-</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🆔</div>
+                        <div class="card-content">
+                            <h3>NIK</h3>
+                            <p id="karyawanNIK">-</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-content">
+                            <h3>Total Jam Lembur</h3>
+                            <p id="karyawanTotalJam">0 jam</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">💰</div>
+                        <div class="card-content">
+                            <h3>Estimasi Insentif</h3>
+                            <p id="karyawanTotalInsentif">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="konfirmasi-section">
+                    <h2>✅ Konfirmasi Lembur</h2>
+                    <p>Apakah data lembur Anda sudah sesuai?</p>
+                    <button class="btn-success" onclick="konfirmasiLembur()">SAYA SUDAH MENGECEK DATA LEMBUR SAYA</button>
+                </div>
+            </div>
+
+            <!-- Detail Page -->
+            <div id="karyawan-detail" class="page-content">
+                <h2>Detail Lembur</h2>
+                <div class="table-container">
+                    <table id="karyawanDetailTable">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Jam</th>
+                                <th>Insentif</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Kalender Page -->
+            <div id="karyawan-kalender" class="page-content">
+                <h2>Kalender Lembur Saya</h2>
+                <div class="kalender-controls">
+                    <select id="karyawanKalenderBulan">
+                        <option value="0">Januari</option>
+                        <option value="1">Februari</option>
+                        <option value="2">Maret</option>
+                        <option value="3">April</option>
+                        <option value="4">Mei</option>
+                        <option value="5">Juni</option>
+                        <option value="6">Juli</option>
+                        <option value="7">Agustus</option>
+                        <option value="8">September</option>
+                        <option value="9">Oktober</option>
+                        <option value="10">November</option>
+                        <option value="11">Desember</option>
+                    </select>
+                    <select id="karyawanKalenderTahun">
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadKaryawanKalender()">Tampilkan</button>
+                </div>
+                <div id="karyawanKalenderContainer"></div>
+            </div>
+
+            <!-- Password Page -->
+            <div id="karyawan-password" class="page-content">
+                <h2>Ganti Password</h2>
+                <div class="password-form">
+                    <div class="form-group">
+                        <label>Password Lama</label>
+                        <input type="password" id="oldPassword" placeholder="Masukkan password lama">
+                    </div>
+                    <div class="form-group">
+                        <label>Password Baru</label>
+                        <input type="password" id="newPassword" placeholder="Masukkan password baru">
+                    </div>
+                    <div class="form-group">
+                        <label>Konfirmasi Password Baru</label>
+                        <input type="password" id="confirmPassword" placeholder="Konfirmasi password baru">
+                    </div>
+                    <button class="btn-primary" onclick="changePassword()">Simpan Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
