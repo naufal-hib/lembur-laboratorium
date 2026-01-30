@@ -3,7 +3,7 @@
 // GANTI URL DI BAWAH INI DENGAN URL APPS SCRIPT ANDA
 // ============================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbz-COCy9uDph2GudVymqp87ob59umuy_uPKA0wRqgAz5VEWm0uqEeFZN5DD1qIZoQNezw/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
+const API_URL = 'https://script.google.com/macros/s/AKfycbzxk8J57o-VXjc1LYooWZrAXShad5xY3A0QErSd0PjwIYI4arOOX667MJYG7n6bYSmhRg/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
 
 // Global Variables
 let currentUser = null;
