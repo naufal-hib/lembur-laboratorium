@@ -3,11 +3,50 @@
 // GANTI URL DI BAWAH INI DENGAN URL APPS SCRIPT ANDA
 // ============================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbz-COCy9uDph2GudVymqp87ob59umuy_uPKA0wRqgAz5VEWm0uqEeFZN5DD1qIZoQNezw/exec'; // Contoh: https://script.google.com/macros/s/xxxxxxxxxx/exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbz-COCy9uDph2GudVymqp87ob59umuy_uPKA0wRqgAz5VEWm0uqEeFZN5DD1qIZoQNezw/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
 
 // Global Variables
 let currentUser = null;
 let cutoffData = null;
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+}
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('id-ID');
+    const dateString = now.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const timeElements = document.querySelectorAll('#currentTime, #karyawanCurrentTime');
+    timeElements.forEach(el => {
+        if (el) el.textContent = `${dateString}, ${timeString}`;
+    });
+}
+
+function showLoginMessage(message, type) {
+    const msgDiv = document.getElementById('loginMessage');
+    if (msgDiv) {
+        msgDiv.textContent = message;
+        msgDiv.className = `login-message ${type}`;
+        setTimeout(() => {
+            msgDiv.textContent = '';
+            msgDiv.className = 'login-message';
+        }, 5000);
+    }
+}
 
 // ============================================
 // INITIALIZATION
@@ -37,32 +76,19 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCutoff();
     
     // Event listeners
-    document.getElementById('btnLogin').addEventListener('click', login);
-    document.getElementById('password').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') login();
-    });
-});
-
-function updateTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('id-ID');
-    const dateString = now.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    const btnLogin = document.getElementById('btnLogin');
+    const passwordInput = document.getElementById('password');
     
-    const timeElements = document.querySelectorAll('#currentTime, #karyawanCurrentTime');
-    timeElements.forEach(el => {
-        if (el) el.textContent = `${dateString}, ${timeString}`;
-    });
-}
-
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = show ? 'flex' : 'none';
-}
+    if (btnLogin) {
+        btnLogin.addEventListener('click', login);
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    }
+});
 
 function checkSession() {
     fetch(API_URL + '?action=get_cutoff', {
@@ -71,7 +97,7 @@ function checkSession() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             loadDashboard();
         } else {
             localStorage.removeItem('lemburUser');
@@ -80,6 +106,7 @@ function checkSession() {
         }
     })
     .catch(error => {
+        console.log('Session check error:', error);
         localStorage.removeItem('lemburUser');
         currentUser = null;
         showLoading(false);
@@ -91,8 +118,13 @@ function checkSession() {
 // ============================================
 
 function login() {
-    const nik = document.getElementById('nik').value.trim();
-    const password = document.getElementById('password').value.trim();
+    const nikInput = document.getElementById('nik');
+    const passwordInput = document.getElementById('password');
+    
+    if (!nikInput || !passwordInput) return;
+    
+    const nik = nikInput.value.trim();
+    const password = passwordInput.value.trim();
     
     if (!nik || !password) {
         showLoginMessage('NIK dan Password harus diisi!', 'error');
@@ -101,35 +133,47 @@ function login() {
     
     showLoading(true);
     
-    // Gunakan POST request
-    const requestData = {
-        action: 'login',
-        nik: nik,
-        password: password
-    };
-    
-    fetch(API_URL, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
+    // Coba GET request dulu
+    fetch(API_URL + '?action=login&nik=' + encodeURIComponent(nik) + '&password=' + encodeURIComponent(password))
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
     })
-    .then(response => response.json())
     .then(data => {
         handleLoginResponse(data);
     })
     .catch(error => {
-        // Fallback ke GET request
-        fetch(API_URL + '?action=login&nik=' + encodeURIComponent(nik) + '&password=' + encodeURIComponent(password))
-        .then(response => response.json())
+        console.log('GET login failed, trying POST:', error);
+        // Fallback ke POST request
+        const requestData = {
+            action: 'login',
+            nik: nik,
+            password: password
+        };
+        
+        fetch(API_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             handleLoginResponse(data);
         })
         .catch(err => {
             showLoading(false);
-            showLoginMessage('Tidak dapat terhubung ke server: ' + err.message, 'error');
+            showLoginMessage('Tidak dapat terhubung ke server. Cek koneksi internet Anda.', 'error');
+            console.error('Login error:', err);
         });
     });
 }
@@ -137,7 +181,7 @@ function login() {
 function handleLoginResponse(data) {
     showLoading(false);
     
-    if (data.success) {
+    if (data && data.success) {
         currentUser = data.data;
         localStorage.setItem('lemburUser', JSON.stringify(currentUser));
         showLoginMessage('Login berhasil!', 'success');
@@ -146,19 +190,7 @@ function handleLoginResponse(data) {
             loadDashboard();
         }, 500);
     } else {
-        showLoginMessage(data.message || 'Login gagal', 'error');
-    }
-}
-
-function showLoginMessage(message, type) {
-    const msgDiv = document.getElementById('loginMessage');
-    if (msgDiv) {
-        msgDiv.textContent = message;
-        msgDiv.className = `login-message ${type}`;
-        setTimeout(() => {
-            msgDiv.textContent = '';
-            msgDiv.className = 'login-message';
-        }, 5000);
+        showLoginMessage(data?.message || 'Login gagal. Periksa NIK dan password.', 'error');
     }
 }
 
@@ -167,9 +199,10 @@ function showLoginMessage(message, type) {
 // ============================================
 
 function loadDashboard() {
-    document.getElementById('loginPage').style.display = 'none';
+    const loginPage = document.getElementById('loginPage');
+    if (loginPage) loginPage.style.display = 'none';
     
-    if (currentUser.role === 'Admin') {
+    if (currentUser && currentUser.role === 'Admin') {
         loadAdminDashboard();
     } else {
         loadKaryawanDashboard();
@@ -177,21 +210,36 @@ function loadDashboard() {
 }
 
 function loadAdminDashboard() {
-    document.getElementById('adminDashboard').style.display = 'flex';
-    document.getElementById('karyawanDashboard').style.display = 'none';
+    const adminDashboard = document.getElementById('adminDashboard');
+    const karyawanDashboard = document.getElementById('karyawanDashboard');
     
-    document.getElementById('adminName').textContent = currentUser.nama;
+    if (adminDashboard) adminDashboard.style.display = 'flex';
+    if (karyawanDashboard) karyawanDashboard.style.display = 'none';
+    
+    const adminName = document.getElementById('adminName');
+    if (adminName && currentUser) {
+        adminName.textContent = currentUser.nama;
+    }
     
     loadAdminSummary();
 }
 
 function loadKaryawanDashboard() {
-    document.getElementById('karyawanDashboard').style.display = 'flex';
-    document.getElementById('adminDashboard').style.display = 'none';
+    const adminDashboard = document.getElementById('adminDashboard');
+    const karyawanDashboard = document.getElementById('karyawanDashboard');
     
-    document.getElementById('karyawanName').textContent = currentUser.nama;
-    document.getElementById('karyawanNama').textContent = currentUser.nama;
-    document.getElementById('karyawanNIK').textContent = currentUser.nik;
+    if (adminDashboard) adminDashboard.style.display = 'none';
+    if (karyawanDashboard) karyawanDashboard.style.display = 'flex';
+    
+    const karyawanName = document.getElementById('karyawanName');
+    const karyawanNama = document.getElementById('karyawanNama');
+    const karyawanNIK = document.getElementById('karyawanNIK');
+    
+    if (currentUser) {
+        if (karyawanName) karyawanName.textContent = currentUser.nama;
+        if (karyawanNama) karyawanNama.textContent = currentUser.nama;
+        if (karyawanNIK) karyawanNIK.textContent = currentUser.nik;
+    }
     
     loadKaryawanData();
 }
@@ -204,7 +252,7 @@ function loadCutoff() {
     fetch(API_URL + '?action=get_cutoff')
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             cutoffData = data.data;
             updateCutoffDisplay();
         }
@@ -215,16 +263,16 @@ function loadCutoff() {
 }
 
 function updateCutoffDisplay() {
-    if (cutoffData) {
-        const adminPeriod = document.getElementById('cutoffPeriod');
-        const karyawanPeriod = document.getElementById('karyawanCutoffPeriod');
-        
-        if (adminPeriod) {
-            adminPeriod.textContent = `Periode: ${cutoffData.cutoff_awal} - ${cutoffData.cutoff_akhir}`;
-        }
-        if (karyawanPeriod) {
-            karyawanPeriod.textContent = `Periode: ${cutoffData.cutoff_awal} - ${cutoffData.cutoff_akhir}`;
-        }
+    if (!cutoffData) return;
+    
+    const adminPeriod = document.getElementById('cutoffPeriod');
+    const karyawanPeriod = document.getElementById('karyawanCutoffPeriod');
+    
+    if (adminPeriod) {
+        adminPeriod.textContent = `Periode: ${cutoffData.cutoff_awal || '-'} - ${cutoffData.cutoff_akhir || '-'}`;
+    }
+    if (karyawanPeriod) {
+        karyawanPeriod.textContent = `Periode: ${cutoffData.cutoff_awal || '-'} - ${cutoffData.cutoff_akhir || '-'}`;
     }
 }
 
@@ -286,16 +334,21 @@ function loadAdminSummary() {
     fetch(API_URL + '?action=get_rekap_karyawan')
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.data) {
+        if (data && data.success && data.data) {
             const totalKaryawan = data.data.length;
             const totalJam = data.data.reduce((sum, k) => sum + (k.total_jam || 0), 0);
             const totalInsentif = data.data.reduce((sum, k) => sum + (k.total_insentif || 0), 0);
             const perluDicek = data.data.filter(k => k.status_konfirmasi !== 'Sudah Dicek').length;
             
-            document.getElementById('totalKaryawan').textContent = totalKaryawan;
-            document.getElementById('totalJam').textContent = totalJam + ' jam';
-            document.getElementById('totalInsentif').textContent = 'Rp ' + totalInsentif.toLocaleString('id-ID');
-            document.getElementById('perluDicek').textContent = perluDicek + ' data';
+            const totalKaryawanEl = document.getElementById('totalKaryawan');
+            const totalJamEl = document.getElementById('totalJam');
+            const totalInsentifEl = document.getElementById('totalInsentif');
+            const perluDicekEl = document.getElementById('perluDicek');
+            
+            if (totalKaryawanEl) totalKaryawanEl.textContent = totalKaryawan;
+            if (totalJamEl) totalJamEl.textContent = totalJam + ' jam';
+            if (totalInsentifEl) totalInsentifEl.textContent = 'Rp ' + totalInsentif.toLocaleString('id-ID');
+            if (perluDicekEl) perluDicekEl.textContent = perluDicek + ' data';
         }
     })
     .catch(error => {
@@ -312,7 +365,7 @@ function loadRekapKaryawan() {
     fetch(API_URL + '?action=get_rekap_karyawan')
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.data) {
+        if (data && data.success && data.data) {
             tbody.innerHTML = '';
             
             if (data.data.length === 0) {
@@ -333,11 +386,11 @@ function loadRekapKaryawan() {
                 tbody.appendChild(row);
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">' + (data.message || 'Error loading data') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">' + (data?.message || 'Error loading data') + '</td></tr>';
         }
     })
     .catch(error => {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Connection error</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Gagal memuat data</td></tr>';
         console.error('Error loading rekap:', error);
     });
 }
@@ -352,7 +405,7 @@ function loadUserTable() {
         </tr>
     `;
     
-    // Simulasi data user (akan diintegrasikan dengan backend nanti)
+    // Simulasi data user
     setTimeout(() => {
         tbody.innerHTML = `
             <tr>
@@ -398,10 +451,10 @@ function resetUserPassword(nik) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 alert('Password berhasil direset untuk ' + nik);
             } else {
-                alert('Gagal reset password: ' + data.message);
+                alert('Gagal reset password: ' + (data?.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -415,7 +468,10 @@ function resetUserPassword(nik) {
 // ============================================
 
 function previewImport() {
-    const data = document.getElementById('importData').value;
+    const importData = document.getElementById('importData');
+    if (!importData) return;
+    
+    const data = importData.value;
     if (!data.trim()) {
         alert('Data tidak boleh kosong!');
         return;
@@ -429,7 +485,10 @@ function previewImport() {
 }
 
 function processImport() {
-    const dataText = document.getElementById('importData').value;
+    const importData = document.getElementById('importData');
+    if (!importData) return;
+    
+    const dataText = importData.value;
     if (!dataText.trim()) {
         alert('Data tidak boleh kosong!');
         return;
@@ -463,11 +522,11 @@ function processImport() {
         .then(response => response.json())
         .then(data => {
             showLoading(false);
-            if (data.success) {
-                alert(`Import berhasil!\nInserted: ${data.data.inserted}\nUpdated: ${data.data.updated}`);
-                document.getElementById('importData').value = '';
+            if (data && data.success) {
+                alert(`Import berhasil!\nInserted: ${data.data?.inserted || 0}\nUpdated: ${data.data?.updated || 0}`);
+                importData.value = '';
             } else {
-                alert('Import gagal: ' + data.message);
+                alert('Import gagal: ' + (data?.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -482,24 +541,29 @@ function processImport() {
 // ============================================
 
 function showKaryawanPage(pageId) {
+    // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
         page.classList.remove('active');
     });
     
+    // Remove active from all menu items
     document.querySelectorAll('.sidebar-menu li').forEach(item => {
         item.classList.remove('active');
     });
     
+    // Show selected page
     const pageElement = document.getElementById(pageId);
     if (pageElement) {
         pageElement.classList.add('active');
     }
     
+    // Set active menu item
     const clickedElement = event.currentTarget;
     if (clickedElement) {
         clickedElement.classList.add('active');
     }
     
+    // Update page title
     const pageTitles = {
         'karyawan-rekap': 'Rekap Lembur',
         'karyawan-detail': 'Detail Lembur',
@@ -518,7 +582,7 @@ function showKaryawanPage(pageId) {
 }
 
 function loadKaryawanData() {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.nik) return;
     
     const requestData = {
         action: 'get_lembur_by_nik',
@@ -535,10 +599,12 @@ function loadKaryawanData() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            document.getElementById('karyawanTotalJam').textContent = data.summary.total_jam + ' jam';
-            document.getElementById('karyawanTotalInsentif').textContent = 
-                'Rp ' + data.summary.total_insentif.toLocaleString('id-ID');
+        if (data && data.success) {
+            const totalJamEl = document.getElementById('karyawanTotalJam');
+            const totalInsentifEl = document.getElementById('karyawanTotalInsentif');
+            
+            if (totalJamEl) totalJamEl.textContent = (data.summary?.total_jam || 0) + ' jam';
+            if (totalInsentifEl) totalInsentifEl.textContent = 'Rp ' + (data.summary?.total_insentif || 0).toLocaleString('id-ID');
         }
     })
     .catch(error => {
@@ -547,7 +613,7 @@ function loadKaryawanData() {
 }
 
 function loadKaryawanDetail() {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.nik) return;
     
     const tbody = document.querySelector('#karyawanDetailTable tbody');
     if (!tbody) return;
@@ -569,7 +635,7 @@ function loadKaryawanDetail() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.data) {
+        if (data && data.success && data.data) {
             tbody.innerHTML = '';
             
             if (data.data.length === 0) {
@@ -589,11 +655,11 @@ function loadKaryawanDetail() {
                 tbody.appendChild(row);
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">' + (data.message || 'Error loading data') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">' + (data?.message || 'Error loading data') + '</td></tr>';
         }
     })
     .catch(error => {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Connection error</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Gagal memuat data</td></tr>';
         console.error('Error loading detail:', error);
     });
 }
@@ -621,10 +687,10 @@ function konfirmasiLembur() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 alert('Konfirmasi berhasil! Data lembur Anda telah dicentang sebagai "Sesuai".');
             } else {
-                alert('Gagal mengkonfirmasi: ' + data.message);
+                alert('Gagal mengkonfirmasi: ' + (data?.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -634,21 +700,27 @@ function konfirmasiLembur() {
 }
 
 function changePassword() {
-    const oldPass = document.getElementById('oldPassword').value.trim();
-    const newPass = document.getElementById('newPassword').value.trim();
-    const confirmPass = document.getElementById('confirmPassword').value.trim();
+    const oldPass = document.getElementById('oldPassword');
+    const newPass = document.getElementById('newPassword');
+    const confirmPass = document.getElementById('confirmPassword');
     
-    if (!oldPass || !newPass || !confirmPass) {
+    if (!oldPass || !newPass || !confirmPass) return;
+    
+    const oldPassword = oldPass.value.trim();
+    const newPassword = newPass.value.trim();
+    const confirmPassword = confirmPass.value.trim();
+    
+    if (!oldPassword || !newPassword || !confirmPassword) {
         alert('Semua field harus diisi!');
         return;
     }
     
-    if (newPass !== confirmPass) {
+    if (newPassword !== confirmPassword) {
         alert('Password baru dan konfirmasi tidak sama!');
         return;
     }
     
-    if (newPass.length < 3) {
+    if (newPassword.length < 3) {
         alert('Password minimal 3 karakter!');
         return;
     }
@@ -656,8 +728,8 @@ function changePassword() {
     const requestData = {
         action: 'change_password',
         nik: currentUser.nik,
-        old_password: oldPass,
-        new_password: newPass
+        old_password: oldPassword,
+        new_password: newPassword
     };
     
     fetch(API_URL, {
@@ -670,13 +742,13 @@ function changePassword() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             alert('Password berhasil diubah!');
-            document.getElementById('oldPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
+            oldPass.value = '';
+            newPass.value = '';
+            confirmPass.value = '';
         } else {
-            alert('Gagal mengubah password: ' + data.message);
+            alert('Gagal mengubah password: ' + (data?.message || 'Unknown error'));
         }
     })
     .catch(error => {
@@ -775,7 +847,10 @@ function loadKaryawanKalender() {
 }
 
 function sendWhatsAppAll() {
-    const message = document.getElementById('whatsappMessageAll').value.trim();
+    const messageInput = document.getElementById('whatsappMessageAll');
+    if (!messageInput) return;
+    
+    const message = messageInput.value.trim();
     if (!message) {
         alert('Pesan tidak boleh kosong!');
         return;
@@ -785,8 +860,13 @@ function sendWhatsAppAll() {
 }
 
 function sendWhatsApp() {
-    const target = document.getElementById('whatsappTarget').value;
-    const message = document.getElementById('whatsappMessage').value.trim();
+    const targetSelect = document.getElementById('whatsappTarget');
+    const messageInput = document.getElementById('whatsappMessage');
+    
+    if (!targetSelect || !messageInput) return;
+    
+    const target = targetSelect.value;
+    const message = messageInput.value.trim();
     
     if (!target || !message) {
         alert('Pilih karyawan dan isi pesan!');
@@ -797,16 +877,22 @@ function sendWhatsApp() {
 }
 
 function saveCutoff() {
-    const bulanGaji = document.getElementById('bulanGaji').value;
-    const cutoffAwal = document.getElementById('cutoffAwal').value;
-    const cutoffAkhir = document.getElementById('cutoffAkhir').value;
+    const bulanGaji = document.getElementById('bulanGaji');
+    const cutoffAwal = document.getElementById('cutoffAwal');
+    const cutoffAkhir = document.getElementById('cutoffAkhir');
     
-    if (!bulanGaji || !cutoffAwal || !cutoffAkhir) {
+    if (!bulanGaji || !cutoffAwal || !cutoffAkhir) return;
+    
+    const bulanGajiValue = bulanGaji.value;
+    const cutoffAwalValue = cutoffAwal.value;
+    const cutoffAkhirValue = cutoffAkhir.value;
+    
+    if (!bulanGajiValue || !cutoffAwalValue || !cutoffAkhirValue) {
         alert('Semua field harus diisi!');
         return;
     }
     
-    alert(`Cutoff disimpan:\nBulan: ${bulanGaji}\nAwal: ${cutoffAwal}\nAkhir: ${cutoffAkhir}`);
+    alert(`Cutoff disimpan:\nBulan: ${bulanGajiValue}\nAwal: ${cutoffAwalValue}\nAkhir: ${cutoffAkhirValue}`);
 }
 
 // ============================================
@@ -819,12 +905,19 @@ function logout() {
         currentUser = null;
         cutoffData = null;
         
-        document.getElementById('loginPage').style.display = 'flex';
-        document.getElementById('adminDashboard').style.display = 'none';
-        document.getElementById('karyawanDashboard').style.display = 'none';
+        const loginPage = document.getElementById('loginPage');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const karyawanDashboard = document.getElementById('karyawanDashboard');
         
-        document.getElementById('nik').value = '';
-        document.getElementById('password').value = '';
+        if (loginPage) loginPage.style.display = 'flex';
+        if (adminDashboard) adminDashboard.style.display = 'none';
+        if (karyawanDashboard) karyawanDashboard.style.display = 'none';
+        
+        const nikInput = document.getElementById('nik');
+        const passwordInput = document.getElementById('password');
+        
+        if (nikInput) nikInput.value = '';
+        if (passwordInput) passwordInput.value = '';
         
         showLoginMessage('Anda telah logout', 'success');
     }
