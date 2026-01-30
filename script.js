@@ -3,7 +3,7 @@
 // ============================================
 
 // GANTI DENGAN WEB APP URL ANDA SETELAH DEPLOY
-const API_URL = 'https://script.google.com/macros/s/AKfycbxkkqeQ4rM9-YrBYkqte5PZ5IHEQD2ZKixt40zphx_3hNIBQND4JySWkqXlvfH3hrSghg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyMXyRUZtMJsncW4ZxxvAfdK2nbZvbi_VGJRywAG2xtqpF9pWgIfieIaUXz9tzuTlm-1w/exec';
 
 // Global Variables
 let currentUser = null;
@@ -522,3 +522,4 @@ function logout() {
 function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
 }
+
