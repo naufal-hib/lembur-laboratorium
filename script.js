@@ -2,9 +2,8 @@
 // LEMBUR LABORATORIUM - JAVASCRIPT
 // ============================================
 
-// API URL (GANTI DENGAN WEB APP URL ANDA)
-const API_URL = 'https://script.google.com/macros/s/AKfycbyMLBWssAlpG-dC-WfsJRT043smCRPq5Q6VAu9oh17U4v9D7O_1hckEmYTWNF5L42IcEA/exec';
-// const API_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbxkkqeQ4rM9-YrBYkqte5PZ5IHEQD2ZKixt40zphx_3hNIBQND4JySWkqXlvfH3hrSghg/exec');
+// GANTI DENGAN WEB APP URL ANDA SETELAH DEPLOY
+const API_URL = 'https://script.google.com/macros/s/AKfycbxkkqeQ4rM9-YrBYkqte5PZ5IHEQD2ZKixt40zphx_3hNIBQND4JySWkqXlvfH3hrSghg/exec';
 
 // Global Variables
 let currentUser = null;
@@ -16,10 +15,8 @@ let lemburData = [];
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Show loading
     showLoading(true);
     
-    // Check if user is already logged in
     const savedUser = localStorage.getItem('lemburUser');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
@@ -28,11 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading(false);
     }
     
-    // Setup time update
     updateTime();
     setInterval(updateTime, 1000);
     
-    // Load cutoff data
     loadCutoff();
 });
 
@@ -69,57 +64,41 @@ document.getElementById('password').addEventListener('keypress', function(e) {
 });
 
 function login() {
-  const nik = document.getElementById('nik').value.trim();
-  const password = document.getElementById('password').value;
-  
-  if (!nik || !password) {
-    showLoginMessage('NIK dan Password harus diisi!', 'error');
-    return;
-  }
-  
-  showLoading(true);
-  
-  // Gunakan mode 'no-cors' untuk bypass CORS check
-  fetch(API_URL, {
-    method: 'POST',
-    mode: 'cors',
-    credentials: 'omit',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      action: 'login',
-      nik: nik,
-      password: password
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('HTTP error! status: ' + response.status);
-    }
-    return response.json();
-  })
-  .then(data => {
-    showLoading(false);
+    const nik = document.getElementById('nik').value.trim();
+    const password = document.getElementById('password').value;
     
-    if (data.success) {
-      currentUser = data.data;
-      localStorage.setItem('lemburUser', JSON.stringify(currentUser));
-      showLoginMessage('Login berhasil! Redirecting...', 'success');
-      
-      setTimeout(() => {
-        loadDashboard();
-      }, 1000);
-    } else {
-      showLoginMessage(data.message, 'error');
+    if (!nik || !password) {
+        showLoginMessage('NIK dan Password harus diisi!', 'error');
+        return;
     }
-  })
-  .catch(error => {
-    showLoading(false);
-    console.error('Fetch error:', error);
-    console.error('Error stack:', error.stack);
-    showLoginMessage('Terjadi kesalahan: ' + error.message + '. Cek console untuk detail.', 'error');
-  });
+    
+    showLoading(true);
+    
+    fetch(API_URL + '?action=login&nik=' + encodeURIComponent(nik) + '&password=' + encodeURIComponent(password), {
+        method: 'GET',
+        mode: 'cors'
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        
+        if (data.success) {
+            currentUser = data.data;
+            localStorage.setItem('lemburUser', JSON.stringify(currentUser));
+            showLoginMessage('Login berhasil! Redirecting...', 'success');
+            
+            setTimeout(() => {
+                loadDashboard();
+            }, 1000);
+        } else {
+            showLoginMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Login error:', error);
+        showLoginMessage('Terjadi kesalahan: ' + error.message, 'error');
+    });
 }
 
 function showLoginMessage(message, type) {
@@ -146,10 +125,6 @@ function loadAdminDashboard() {
     document.getElementById('adminDashboard').style.display = 'flex';
     document.getElementById('adminName').textContent = currentUser.nama;
     
-    // Load summary
-    loadAdminSummary();
-    
-    // Load cutoff period
     if (cutoffData) {
         document.getElementById('cutoffPeriod').textContent = 
             `Periode: ${cutoffData.cutoff_awal} - ${cutoffData.cutoff_akhir}`;
@@ -162,10 +137,8 @@ function loadKaryawanDashboard() {
     document.getElementById('karyawanNama').textContent = currentUser.nama;
     document.getElementById('karyawanNIK').textContent = currentUser.nik;
     
-    // Load karyawan data
     loadKaryawanData();
     
-    // Load cutoff period
     if (cutoffData) {
         document.getElementById('karyawanCutoffPeriod').textContent = 
             `Periode: ${cutoffData.cutoff_awal} - ${cutoffData.cutoff_akhir}`;
@@ -177,7 +150,10 @@ function loadKaryawanDashboard() {
 // ============================================
 
 function loadCutoff() {
-    fetch(API_URL + '?action=get_cutoff')
+    fetch(API_URL + '?action=get_cutoff', {
+        method: 'GET',
+        mode: 'cors'
+    })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
@@ -190,10 +166,6 @@ function loadCutoff() {
 }
 
 function saveCutoff() {
-    const bulan = document.getElementById('bulanGaji').value;
-    const awal = document.getElementById('cutoffAwal').value;
-    const akhir = document.getElementById('cutoffAkhir').value;
-    
     alert('Fitur ini akan diimplementasikan');
 }
 
@@ -202,23 +174,17 @@ function saveCutoff() {
 // ============================================
 
 function showPage(pageId) {
-    // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
         page.classList.remove('active');
     });
     
-    // Remove active from all menu items
     document.querySelectorAll('.sidebar-menu li').forEach(item => {
         item.classList.remove('active');
     });
     
-    // Show selected page
     document.getElementById(pageId).classList.add('active');
-    
-    // Set active menu
     event.currentTarget.classList.add('active');
     
-    // Set page title
     const pageTitle = {
         'admin-summary': 'Dashboard Admin',
         'admin-cutoff': 'Pengaturan Cutoff',
@@ -231,7 +197,6 @@ function showPage(pageId) {
     
     document.getElementById('pageTitle').textContent = pageTitle[pageId];
     
-    // Load specific data if needed
     if (pageId === 'admin-rekap') {
         loadRekapKaryawan();
     } else if (pageId === 'admin-kalender') {
@@ -242,7 +207,6 @@ function showPage(pageId) {
 }
 
 function loadAdminSummary() {
-    // Mock data for demo
     document.getElementById('totalKaryawan').textContent = '45';
     document.getElementById('totalJam').textContent = '547 jam';
     document.getElementById('totalInsentif').textContent = 'Rp 8.205.000';
@@ -250,36 +214,39 @@ function loadAdminSummary() {
 }
 
 function loadRekapKaryawan() {
-    // Mock data for demo
-    const tbody = document.querySelector('#rekapTable tbody');
-    tbody.innerHTML = `
-        <tr>
-            <td>00002</td>
-            <td>Anton Susilo</td>
-            <td>38 jam</td>
-            <td>Rp 760.000</td>
-            <td><span style="color:green;">✅ Sudah Dicek</span></td>
-            <td><button class="btn-secondary" onclick="viewKaryawanDetail('00002')">Lihat</button></td>
-        </tr>
-        <tr>
-            <td>00058</td>
-            <td>Ibnu Dwi Prasetyo</td>
-            <td>36 jam</td>
-            <td>Rp 720.000</td>
-            <td><span style="color:orange;">⚠️ Belum Dicek</span></td>
-            <td><button class="btn-secondary" onclick="viewKaryawanDetail('00058')">Lihat</button></td>
-        </tr>
-    `;
+    fetch(API_URL + '?action=get_rekap_karyawan', {
+        method: 'GET',
+        mode: 'cors'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const tbody = document.querySelector('#rekapTable tbody');
+            tbody.innerHTML = '';
+            
+            data.data.forEach(karyawan => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${karyawan.nik}</td>
+                    <td>${karyawan.nama}</td>
+                    <td>${karyawan.total_jam} jam</td>
+                    <td>Rp ${karyawan.total_insentif.toLocaleString('id-ID')}</td>
+                    <td><span style="color:${karyawan.status_konfirmasi === 'Sudah Dicek' ? 'green' : 'orange'};">${karyawan.status_konfirmasi === 'Sudah Dicek' ? '✅ Sudah Dicek' : '⚠️ Belum Dicek'}</span></td>
+                    <td><button class="btn-secondary" onclick="viewKaryawanDetail('${karyawan.nik}')">Lihat</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading rekap:', error);
+    });
 }
 
 function loadKalender() {
-    const bulan = parseInt(document.getElementById('kalenderBulan').value);
-    const tahun = parseInt(document.getElementById('kalenderTahun').value);
-    
     const container = document.getElementById('kalenderContainer');
-    container.innerHTML = '<p>Loading kalender...</p>';
+    container.innerHTML = '<p>Loading...</p>';
     
-    // Mock data for demo
     container.innerHTML = `
         <div class="kalender-month">
             <h3>Anton Susilo (00002)</h3>
@@ -321,7 +288,6 @@ function loadKalender() {
 }
 
 function loadUserTable() {
-    // Mock data for demo
     const tbody = document.querySelector('#userTable tbody');
     tbody.innerHTML = `
         <tr>
@@ -349,7 +315,7 @@ function showAddUserModal() {
 
 function previewImport() {
     const data = document.getElementById('importData').value;
-    alert('Preview data:\n\n' + data.substring(0, 200) + '...');
+    alert('Preview:\n\n' + data.substring(0, 200) + '...');
 }
 
 function processImport() {
@@ -382,23 +348,17 @@ function sendWhatsApp() {
 // ============================================
 
 function showKaryawanPage(pageId) {
-    // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
         page.classList.remove('active');
     });
     
-    // Remove active from all menu items
     document.querySelectorAll('.sidebar-menu li').forEach(item => {
         item.classList.remove('active');
     });
     
-    // Show selected page
     document.getElementById(pageId).classList.add('active');
-    
-    // Set active menu
     event.currentTarget.classList.add('active');
     
-    // Set page title
     const pageTitle = {
         'karyawan-rekap': 'Rekap Lembur',
         'karyawan-detail': 'Detail Lembur',
@@ -408,7 +368,6 @@ function showKaryawanPage(pageId) {
     
     document.getElementById('karyawanPageTitle').textContent = pageTitle[pageId];
     
-    // Load specific data if needed
     if (pageId === 'karyawan-detail') {
         loadKaryawanDetail();
     } else if (pageId === 'karyawan-kalender') {
@@ -417,40 +376,55 @@ function showKaryawanPage(pageId) {
 }
 
 function loadKaryawanData() {
-    // Mock data for demo
-    document.getElementById('karyawanTotalJam').textContent = '38 jam';
-    document.getElementById('karyawanTotalInsentif').textContent = 'Rp 760.000';
+    fetch(API_URL + '?action=get_lembur_by_nik&nik=' + encodeURIComponent(currentUser.nik), {
+        method: 'GET',
+        mode: 'cors'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('karyawanTotalJam').textContent = data.summary.total_jam + ' jam';
+            document.getElementById('karyawanTotalInsentif').textContent = 'Rp ' + data.summary.total_insentif.toLocaleString('id-ID');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading karyawan data:', error);
+    });
 }
 
 function loadKaryawanDetail() {
-    // Mock data for demo
-    const tbody = document.querySelector('#karyawanDetailTable tbody');
-    tbody.innerHTML = `
-        <tr>
-            <td>09/01/2026</td>
-            <td>Hari Kerja</td>
-            <td>3 jam</td>
-            <td>Rp 60.000</td>
-            <td><span style="color:green;">✅ Sesuai</span></td>
-        </tr>
-        <tr>
-            <td>11/01/2026</td>
-            <td>Hari Libur</td>
-            <td>7 jam</td>
-            <td>Rp 100.000</td>
-            <td><span style="color:green;">✅ Sesuai</span></td>
-        </tr>
-    `;
+    fetch(API_URL + '?action=get_lembur_by_nik&nik=' + encodeURIComponent(currentUser.nik), {
+        method: 'GET',
+        mode: 'cors'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const tbody = document.querySelector('#karyawanDetailTable tbody');
+            tbody.innerHTML = '';
+            
+            data.data.forEach(lembur => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${lembur.tanggal}</td>
+                    <td>${lembur.jenis_lembur}</td>
+                    <td>${lembur.jam_angka} jam</td>
+                    <td>Rp ${lembur.insentif.toLocaleString('id-ID')}</td>
+                    <td><span style="color:${lembur.status_konfirmasi === 'Sesuai' ? 'green' : 'orange'};">${lembur.status_konfirmasi === 'Sesuai' ? '✅ Sesuai' : '⚠️ Belum Dicek'}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading detail:', error);
+    });
 }
 
 function loadKaryawanKalender() {
-    const bulan = parseInt(document.getElementById('karyawanKalenderBulan').value);
-    const tahun = parseInt(document.getElementById('karyawanKalenderTahun').value);
-    
     const container = document.getElementById('karyawanKalenderContainer');
-    container.innerHTML = '<p>Loading kalender...</p>';
+    container.innerHTML = '<p>Loading...</p>';
     
-    // Mock data for demo
     container.innerHTML = `
         <div class="kalender-month">
             <h3>Januari 2026</h3>
@@ -532,12 +506,10 @@ function logout() {
         localStorage.removeItem('lemburUser');
         currentUser = null;
         
-        // Show login page
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('adminDashboard').style.display = 'none';
         document.getElementById('karyawanDashboard').style.display = 'none';
         
-        // Reset form
         document.getElementById('nik').value = '';
         document.getElementById('password').value = '';
     }
@@ -549,12 +521,4 @@ function logout() {
 
 function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
-
 }
-
-
-
-
-
-
-
