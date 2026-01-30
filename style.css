@@ -335,6 +335,7 @@ table tr:hover {
     cursor: pointer;
     font-weight: 600;
     transition: background 0.3s;
+    margin-right: 10px;
 }
 
 .btn-primary:hover {
@@ -350,6 +351,7 @@ table tr:hover {
     cursor: pointer;
     font-weight: 600;
     transition: background 0.3s;
+    margin-right: 10px;
 }
 
 .btn-secondary:hover {
@@ -366,6 +368,7 @@ table tr:hover {
     font-weight: 600;
     font-size: 16px;
     transition: background 0.3s;
+    margin-right: 10px;
 }
 
 .btn-success:hover {
