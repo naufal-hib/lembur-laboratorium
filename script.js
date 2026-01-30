@@ -69,47 +69,57 @@ document.getElementById('password').addEventListener('keypress', function(e) {
 });
 
 function login() {
-    const nik = document.getElementById('nik').value.trim();
-    const password = document.getElementById('password').value;
-    
-    if (!nik || !password) {
-        showLoginMessage('NIK dan Password harus diisi!', 'error');
-        return;
+  const nik = document.getElementById('nik').value.trim();
+  const password = document.getElementById('password').value;
+  
+  if (!nik || !password) {
+    showLoginMessage('NIK dan Password harus diisi!', 'error');
+    return;
+  }
+  
+  showLoading(true);
+  
+  // Gunakan mode 'no-cors' untuk bypass CORS check
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'omit',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      action: 'login',
+      nik: nik,
+      password: password
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('HTTP error! status: ' + response.status);
     }
+    return response.json();
+  })
+  .then(data => {
+    showLoading(false);
     
-    showLoading(true);
-    
-    fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            action: 'login',
-            nik: nik,
-            password: password
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        showLoading(false);
-        
-        if (data.success) {
-            currentUser = data.data;
-            localStorage.setItem('lemburUser', JSON.stringify(currentUser));
-            showLoginMessage('Login berhasil! Redirecting...', 'success');
-            
-            setTimeout(() => {
-                loadDashboard();
-            }, 1000);
-        } else {
-            showLoginMessage(data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showLoading(false);
-        showLoginMessage('Terjadi kesalahan: ' + error.message, 'error');
-    });
+    if (data.success) {
+      currentUser = data.data;
+      localStorage.setItem('lemburUser', JSON.stringify(currentUser));
+      showLoginMessage('Login berhasil! Redirecting...', 'success');
+      
+      setTimeout(() => {
+        loadDashboard();
+      }, 1000);
+    } else {
+      showLoginMessage(data.message, 'error');
+    }
+  })
+  .catch(error => {
+    showLoading(false);
+    console.error('Fetch error:', error);
+    console.error('Error stack:', error.stack);
+    showLoginMessage('Terjadi kesalahan: ' + error.message + '. Cek console untuk detail.', 'error');
+  });
 }
 
 function showLoginMessage(message, type) {
@@ -541,6 +551,7 @@ function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
 
 }
+
 
 
 
