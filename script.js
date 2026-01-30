@@ -3,7 +3,7 @@
 // ============================================
 
 // API URL (GANTI DENGAN WEB APP URL ANDA)
-const API_URL = 'YOUR_WEB_APP_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwds62XUj2UiR6zVK3jR2LRlC_r1bgkAGBvtrF4gQHU7KB9InuE3n45WdUPNrssokxk0Q/exec';
 
 // Global Variables
 let currentUser = null;
@@ -538,4 +538,5 @@ function logout() {
 
 function viewKaryawanDetail(nik) {
     alert(`Menampilkan detail lembur untuk NIK: ${nik}`);
+
 }
